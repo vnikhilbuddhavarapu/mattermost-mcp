@@ -1,6 +1,7 @@
 {
-	"name": "remote-mcp-server-authless",
-	"version": "0.0.0",
+	"name": "mattermost-mcp",
+	"version": "1.0.0",
+	"description": "Mattermost MCP Server - Remote MCP server for Mattermost integration",
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",

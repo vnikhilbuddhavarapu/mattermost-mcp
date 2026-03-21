@@ -1,9 +1,6 @@
 /**
- * Resources Index - Export all WikiJS MCP resources
+ * Resources Index - Export all Mattermost MCP resources
  */
 
-export { registerPagesResource } from './pages-list';
-export { registerPageByIdResource } from './page-by-id';
-export { registerTagsResource } from './tags-list';
-export { registerRecentChangesResource } from './recent-changes';
-export { registerStatsResource } from './stats';
+export { registerChannelsResource } from "./channels-list";
+export { registerUsersResource } from "./users-list";

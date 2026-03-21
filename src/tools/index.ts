@@ -1,20 +1,13 @@
 /**
- * Tools Index - Export all WikiJS MCP tools
+ * Tools Index - Export all Mattermost MCP tools
  */
 
-export { registerSearchPagesTool } from "./search-pages";
-export { registerListPagesTool } from "./list-pages";
-export { registerGetPageTool } from "./get-page";
-export { registerGetPageByPathTool } from "./get-page-by-path";
-export { registerCreatePageTool } from "./create-page";
-export { registerUpdatePageTool } from "./update-page";
-export { registerDeletePageTool } from "./delete-page";
-export { registerListTagsTool } from "./list-tags";
-export { registerSearchByTagTool } from "./search-by-tag";
-export { registerRecentChangesTool } from "./recent-changes";
-export { registerPageHistoryTool } from "./page-history";
-export { registerWikiStatsTool } from "./wiki-stats";
-export { registerCreateSummaryTool } from "./create-summary";
-export { registerFindRelatedPagesTool } from "./find-related-pages";
-export { registerExploreKnowledgeGraphTool } from "./explore-knowledge-graph";
-export { registerExportPageTool } from "./export-page";
+export { registerListChannelsTool } from "./list-channels";
+export { registerGetChannelHistoryTool } from "./get-channel-history";
+export { registerPostMessageTool } from "./post-message";
+export { registerReplyToThreadTool } from "./reply-to-thread";
+export { registerAddReactionTool } from "./add-reaction";
+export { registerGetThreadRepliesTool } from "./get-thread-replies";
+export { registerGetUsersTool } from "./get-users";
+export { registerGetUserProfileTool } from "./get-user-profile";
+export { registerCreateDirectChannelTool } from "./create-direct-channel";

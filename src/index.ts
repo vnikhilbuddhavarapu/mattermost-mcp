@@ -1,63 +1,55 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { McpAgent } from "agents/mcp";
-import { WikiJSClient } from "./wikijs-client";
+import { MattermostClient } from "./mattermost-client";
 import { generateRequestId, MCPLogger } from "./shared/utils";
+import type { ExecutionContext } from "@cloudflare/workers-types";
+
+interface Env {
+  MATTERMOST_URL: string;
+  MATTERMOST_TOKEN: string;
+  MATTERMOST_TEAM_ID: string;
+  MCP_OBJECT: DurableObjectNamespace<MattermostMCP>;
+}
 
 /**
  * Import all tools
  */
 import {
-  registerSearchPagesTool,
-  registerListPagesTool,
-  registerGetPageTool,
-  registerGetPageByPathTool,
-  registerCreatePageTool,
-  registerUpdatePageTool,
-  registerDeletePageTool,
-  registerListTagsTool,
-  registerSearchByTagTool,
-  registerRecentChangesTool,
-  registerPageHistoryTool,
-  registerWikiStatsTool,
-  registerCreateSummaryTool,
-  registerFindRelatedPagesTool,
-  registerExploreKnowledgeGraphTool,
-  registerExportPageTool,
+  registerListChannelsTool,
+  registerGetChannelHistoryTool,
+  registerPostMessageTool,
+  registerReplyToThreadTool,
+  registerAddReactionTool,
+  registerGetThreadRepliesTool,
+  registerGetUsersTool,
+  registerGetUserProfileTool,
+  registerCreateDirectChannelTool,
 } from "./tools";
 
 /**
  * Import all prompts
  */
 import {
-  registerSearchGuidePrompt,
-  registerNewPageTemplatePrompt,
-  registerKnowledgeExplorerPrompt,
-  registerDocumentationReviewPrompt,
-  registerFaqGeneratorPrompt,
+  registerMattermostGuidePrompt,
+  registerMessageTemplatePrompt,
 } from "./prompts";
 
 /**
  * Import all resources
  */
-import {
-  registerPagesResource,
-  registerPageByIdResource,
-  registerTagsResource,
-  registerRecentChangesResource,
-  registerStatsResource,
-} from "./resources";
+import { registerChannelsResource, registerUsersResource } from "./resources";
 
 /**
- * MCP Agent for WikiJS integration
- * Provides tools, prompts, and resources for WikiJS integration
+ * MCP Agent for Mattermost integration
+ * Provides tools, prompts, and resources for Mattermost integration
  */
-export class WikiJSMCP extends McpAgent<
+export class MattermostMCP extends McpAgent<
   Env,
   Record<string, never>,
   Record<string, never>
 > {
   server = new McpServer({
-    name: "WikiJS MCP",
+    name: "Mattermost MCP",
     version: "1.0.0",
   });
 
@@ -68,74 +60,69 @@ export class WikiJSMCP extends McpAgent<
     /**
      * Validate environment configuration
      */
-    const wikiBaseUrl = this.env.WIKI_JS_BASE_URL;
-    const wikiApiKey = this.env.WIKI_JS_API_KEY;
+    const mattermostUrl = this.env.MATTERMOST_URL;
+    const mattermostToken = this.env.MATTERMOST_TOKEN;
+    const mattermostTeamId = this.env.MATTERMOST_TEAM_ID;
 
-    if (!wikiBaseUrl || !wikiApiKey) {
+    if (!mattermostUrl || !mattermostToken || !mattermostTeamId) {
       logger.error("Missing required environment variables", {
-        hasBaseUrl: !!wikiBaseUrl,
-        hasApiKey: !!wikiApiKey,
+        hasUrl: !!mattermostUrl,
+        hasToken: !!mattermostToken,
+        hasTeamId: !!mattermostTeamId,
       });
       throw new Error(
-        "Missing required environment variables: WIKI_JS_BASE_URL and WIKI_JS_API_KEY must be set",
+        "Missing required environment variables: MATTERMOST_URL, MATTERMOST_TOKEN, and MATTERMOST_TEAM_ID must be set",
       );
     }
 
-    logger.info("Initializing WikiJS MCP", {
-      wikiBaseUrl,
-      hasApiKey: true,
+    logger.info("Initializing Mattermost MCP", {
+      mattermostUrl,
+      hasToken: true,
+      teamId: mattermostTeamId,
     });
 
     /**
-     * Initialize WikiJS client
+     * Initialize Mattermost client
      */
-    const wikiClient = new WikiJSClient(wikiBaseUrl, wikiApiKey, requestId);
+    const mattermostClient = new MattermostClient(
+      mattermostUrl,
+      mattermostToken,
+      mattermostTeamId,
+      requestId,
+    );
 
     /**
-     * Register all 15 tools
+     * Register all 9 tools
      */
     logger.debug("Registering tools...");
-    registerSearchPagesTool(this.server, wikiClient);
-    registerListPagesTool(this.server, wikiClient);
-    registerGetPageTool(this.server, wikiClient);
-    registerGetPageByPathTool(this.server, wikiClient);
-    registerCreatePageTool(this.server, wikiClient, wikiBaseUrl);
-    registerUpdatePageTool(this.server, wikiClient);
-    registerDeletePageTool(this.server, wikiClient);
-    registerListTagsTool(this.server, wikiClient);
-    registerSearchByTagTool(this.server, wikiClient);
-    registerRecentChangesTool(this.server, wikiClient);
-    registerPageHistoryTool(this.server, wikiClient);
-    registerWikiStatsTool(this.server, wikiClient);
-    registerCreateSummaryTool(this.server, wikiClient);
-    registerFindRelatedPagesTool(this.server, wikiClient);
-    registerExploreKnowledgeGraphTool(this.server, wikiClient);
-    registerExportPageTool(this.server, wikiClient);
+    registerListChannelsTool(this.server, mattermostClient);
+    registerGetChannelHistoryTool(this.server, mattermostClient);
+    registerPostMessageTool(this.server, mattermostClient);
+    registerReplyToThreadTool(this.server, mattermostClient);
+    registerAddReactionTool(this.server, mattermostClient);
+    registerGetThreadRepliesTool(this.server, mattermostClient);
+    registerGetUsersTool(this.server, mattermostClient);
+    registerGetUserProfileTool(this.server, mattermostClient);
+    registerCreateDirectChannelTool(this.server, mattermostClient);
 
     /**
-     * Register all 5 prompts
+     * Register all 2 prompts
      */
     logger.debug("Registering prompts...");
-    registerSearchGuidePrompt(this.server);
-    registerNewPageTemplatePrompt(this.server);
-    registerKnowledgeExplorerPrompt(this.server);
-    registerDocumentationReviewPrompt(this.server);
-    registerFaqGeneratorPrompt(this.server);
+    registerMattermostGuidePrompt(this.server);
+    registerMessageTemplatePrompt(this.server);
 
     /**
-     * Register all 5 resources
+     * Register all 2 resources
      */
     logger.debug("Registering resources...");
-    registerPagesResource(this.server, wikiClient, wikiBaseUrl);
-    registerPageByIdResource(this.server, wikiClient, wikiBaseUrl);
-    registerTagsResource(this.server, wikiClient);
-    registerRecentChangesResource(this.server, wikiClient, wikiBaseUrl);
-    registerStatsResource(this.server, wikiClient);
+    registerChannelsResource(this.server, mattermostClient);
+    registerUsersResource(this.server, mattermostClient);
 
-    logger.info("WikiJS MCP initialization complete", {
-      toolsRegistered: 15,
-      promptsRegistered: 5,
-      resourcesRegistered: 5,
+    logger.info("Mattermost MCP initialization complete", {
+      toolsRegistered: 9,
+      promptsRegistered: 2,
+      resourcesRegistered: 2,
     });
   }
 }
@@ -168,7 +155,7 @@ export default {
     });
 
     if (url.pathname === "/mcp") {
-      return WikiJSMCP.serve("/mcp").fetch(request, env, ctx);
+      return MattermostMCP.serve("/mcp").fetch(request, env, ctx);
     }
 
     return new Response("Not found", { status: 404 });

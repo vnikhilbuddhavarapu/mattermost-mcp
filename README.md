@@ -1,52 +1,50 @@
-# WikiJS MCP Server
+# Mattermost MCP Server
 
-A Model Context Protocol (MCP) server for managing WikiJS instances. This server provides read and write capabilities for wiki pages, including search, creation, updates, deletion, and knowledge graph exploration.
+A Model Context Protocol (MCP) server for interacting with Mattermost workspaces. This server provides tools for managing channels, messages, threads, reactions, and user profiles through Mattermost's REST API.
+
+Built on [Cloudflare Workers](https://developers.cloudflare.com/workers/) using the [Agents SDK](https://developers.cloudflare.com/agents/).
 
 **Important:** This is an MCP server without OAuth authentication, designed for trusted environments where the server runs with pre-configured API credentials.
 
 ## Features
 
-### Tools (15 Total)
+### Tools (9 Total)
 
-**Read Operations (12 tools):**
-- `list_wiki_pages` - List all pages in the wiki
-- `get_wiki_page` - Get a specific page by ID
-- `get_page_by_path` - Get a page by its path
-- `search_wiki_pages` - Search pages by keyword
-- `get_page_history` - Get revision history for a page
-- `get_recent_changes` - Get recently modified pages
-- `list_page_tags` - List all tags used in the wiki
-- `search_by_tag` - Find pages by tag
-- `find_related_pages` - Discover related content
-- `explore_knowledge_graph` - Navigate tag-based knowledge graphs
-- `create_page_summary` - Generate summaries of page content
-- `export_page_content` - Export page in markdown, HTML, or plain text
-- `get_wiki_stats` - Get wiki statistics
+**Read Operations (6 tools):**
+- `list_mattermost_channels` - List all channels in the team
+- `get_mattermost_channel_history` - Get message history from a channel
+- `get_mattermost_thread_replies` - Get all replies in a thread
+- `get_mattermost_users` - List users in the workspace
+- `get_mattermost_user_profile` - Get detailed profile for a specific user
 
 **Write Operations (3 tools):**
-- `create_wiki_page` - Create new wiki pages
-- `update_wiki_page` - Update existing pages by ID or path
-- `delete_wiki_page` - Delete pages with confirmation protection
+- `post_mattermost_message` - Post a new message to a channel
+- `reply_to_mattermost_thread` - Reply to an existing thread
+- `add_mattermost_reaction` - Add emoji reactions to posts
+- `create_mattermost_direct_channel` - Create a direct message channel with a user
 
-### Prompts (5 Total)
-- `new_page_template` - Template for creating new wiki pages
-- `documentation_review` - Guide for reviewing documentation
-- `faq_generator` - Template for FAQ generation
-- `knowledge_explorer` - Explore connections between pages
-- `search_guide` - Help users search effectively
+### Prompts (2 Total)
+- `mattermost_guide` - Comprehensive guide for using Mattermost effectively
+- `message_template` - Helpful templates for crafting effective Mattermost messages
 
-### Resources (5 Total)
-- `wiki://pages` - List of all pages
-- `wiki://page/{id}` - Specific page content by ID
-- `wiki://tags` - All available tags
-- `wiki://recent-changes` - Recent modifications
-- `wiki://stats` - Wiki statistics
+### Resources (2 Total)
+- `mattermost://channels` - List of all channels in the team
+- `mattermost://users` - List of all users in the workspace
+
+## Architecture
+
+This MCP server is built using:
+- **Cloudflare Workers**: Serverless compute
+- **Agents SDK**: Framework for building AI agents and [MCP Servers](https://developers.cloudflare.com/agents/guides/remote-mcp-server/)
+- **Durable Objects**: For persistent MCP session state
+- **Mattermost REST API v4**: For workspace integration
 
 ## Prerequisites
 
 - Node.js 18+
-- A WikiJS instance with API access enabled
-- API key from your WikiJS admin panel (Administration > API)
+- A Mattermost instance (self-hosted or cloud)
+- Personal Access Token from Mattermost (Profile → Security → Personal Access Tokens)
+- Team ID from your Mattermost workspace
 
 ## Quick Start
 
@@ -54,8 +52,8 @@ A Model Context Protocol (MCP) server for managing WikiJS instances. This server
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/vnikhilbuddhavarapu/wiki-mcp.git
-cd wiki-mcp
+git clone https://github.com/vnikhilbuddhavarapu/mattermost-mcp.git
+cd mattermost-mcp
 ```
 
 2. Install dependencies:
@@ -68,10 +66,17 @@ npm install
 cp .dev.vars.example .dev.vars
 ```
 
-Edit `.dev.vars` with your WikiJS credentials:
+Edit `.dev.vars` with your Mattermost credentials:
 ```
-WIKI_JS_BASE_URL=https://your-wiki-instance.com
-WIKI_JS_API_KEY=your-api-key-here
+MATTERMOST_URL=https://mattermost.your-domain.com
+MATTERMOST_TOKEN=your-personal-access-token
+MATTERMOST_TEAM_ID=your-team-id
+```
+
+**Finding your Team ID:**
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  https://mattermost.your-domain.com/api/v4/teams | jq '.[].id'
 ```
 
 4. Run locally:
@@ -81,7 +86,7 @@ npm run dev
 
 ### Deploy to Cloudflare Workers
 
-[![Deploy to Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/vnikhilbuddhavarapu/wiki-mcp)
+[![Deploy to Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/vnikhilbuddhavarapu/mattermost-mcp)
 
 1. Click the deploy button above or run:
 ```bash
@@ -90,8 +95,9 @@ npm run deploy
 
 2. Set your secrets:
 ```bash
-npx wrangler secret put WIKI_JS_BASE_URL
-npx wrangler secret put WIKI_JS_API_KEY
+npx wrangler secret put MATTERMOST_URL
+npx wrangler secret put MATTERMOST_TOKEN
+npx wrangler secret put MATTERMOST_TEAM_ID
 ```
 
 ## Configuration
@@ -100,14 +106,9 @@ npx wrangler secret put WIKI_JS_API_KEY
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `WIKI_JS_BASE_URL` | Yes | Your WikiJS instance URL (e.g., `https://wiki.example.com`) |
-| `WIKI_JS_API_KEY` | Yes | API key from WikiJS Administration panel |
-
-### Path Format
-
-Page paths are automatically normalized:
-- Input: `my-page`, `/my-page`, `//my-page/`, `my-page/`
-- Normalized: `/my-page`
+| `MATTERMOST_URL` | Yes | Your Mattermost instance URL (e.g., `https://mattermost.example.com`) |
+| `MATTERMOST_TOKEN` | Yes | Personal Access Token from Mattermost |
+| `MATTERMOST_TEAM_ID` | Yes | Team ID (get via API, not team name) |
 
 ## Usage with MCP Clients
 
@@ -118,12 +119,13 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 ```json
 {
   "mcpServers": {
-    "wikijs": {
+    "mattermost": {
       "command": "npx",
-      "args": ["-y", "mcp-remote", "https://wiki-mcp.your-account.workers.dev/mcp"],
+      "args": ["-y", "mcp-remote", "https://mattermost-mcp.your-account.workers.dev/mcp"],
       "env": {
-        "WIKI_JS_BASE_URL": "https://your-wiki-instance.com",
-        "WIKI_JS_API_KEY": "your-api-key-here"
+        "MATTERMOST_URL": "https://mattermost.your-domain.com",
+        "MATTERMOST_TOKEN": "your-token-here",
+        "MATTERMOST_TEAM_ID": "your-team-id"
       }
     }
   }
@@ -132,158 +134,96 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 
 ### Other MCP Clients
 
-Connect to the mcp endpoint:
+Connect to the MCP endpoint:
 ```
-https://your-worker.your-account.workers.dev/mcp
+https://mattermost-mcp.your-account.workers.dev/mcp
 ```
 
 ## Project Structure
 
 ```
 src/
-├── index.ts                 # Main MCP server setup and initialization
-├── wikijs-client.ts         # GraphQL client for WikiJS API
+├── index.ts                 # Main MCP server setup and Durable Object
+├── mattermost-client.ts     # REST API client for Mattermost
 ├── shared/
-│   └── utils.ts            # Logging utilities and path sanitization
+│   └── utils.ts            # Logging utilities and request ID generation
 ├── tools/                   # MCP tool implementations
-│   ├── create-page.ts
-│   ├── delete-page.ts
-│   ├── update-page.ts
-│   ├── search-pages.ts
-│   ├── list-pages.ts
-│   ├── get-page.ts
-│   ├── get-page-by-path.ts
-│   ├── page-history.ts
-│   ├── recent-changes.ts
-│   ├── list-tags.ts
-│   ├── search-by-tag.ts
-│   ├── find-related-pages.ts
-│   ├── explore-knowledge-graph.ts
-│   ├── create-summary.ts
-│   ├── export-page.ts
-│   ├── wiki-stats.ts
+│   ├── list-channels.ts
+│   ├── get-channel-history.ts
+│   ├── post-message.ts
+│   ├── reply-to-thread.ts
+│   ├── get-thread-replies.ts
+│   ├── add-reaction.ts
+│   ├── get-users.ts
+│   ├── get-user-profile.ts
+│   ├── create-direct-channel.ts
 │   └── index.ts            # Tool exports
 ├── prompts/                # MCP prompt templates
-│   ├── new-page-template.ts
-│   ├── documentation-review.ts
-│   ├── faq-generator.ts
-│   ├── knowledge-explorer.ts
-│   ├── search-guide.ts
+│   ├── mattermost-guide.ts
+│   ├── message-template.ts
 │   └── index.ts            # Prompt exports
 └── resources/              # MCP resources
-    ├── page-by-id.ts
-    ├── pages-list.ts
-    ├── tags-list.ts
-    ├── recent-changes.ts
-    ├── stats.ts
+    ├── channels-list.ts
+    ├── users-list.ts
     └── index.ts            # Resource exports
 
 wrangler.jsonc              # Cloudflare Workers configuration
-worker-configuration.d.ts    # TypeScript types for bindings
+worker-configuration.d.ts  # TypeScript types for bindings
 ```
-
-## Security Considerations
-
-This MCP server runs without OAuth and uses pre-configured API credentials. Ensure:
-
-1. **API Key Security:** Store `WIKI_JS_API_KEY` as a Cloudflare secret, never commit it to code
-2. **Access Control:** The API key inherits permissions from the WikiJS user account it belongs to
-3. **Network Security:** Deploy with HTTPS only (enforced by Cloudflare Workers)
-4. **Logging:** API keys are never logged; only `hasApiKey: true/false` is tracked
 
 ## API Reference
 
-### WikiJS GraphQL API
+### Mattermost REST API v4
 
-This server uses the [WikiJS GraphQL API](https://docs.requarks.io/dev/api). Key mutations used:
+This server uses the [Mattermost REST API v4](https://api.mattermost.com/). Key endpoints used:
 
-**Create Page:**
-```graphql
-mutation {
-  pages {
-    create(
-      title: String!
-      path: String!
-      content: String!
-      editor: "markdown"
-      isPublished: true
-      isPrivate: false
-      locale: "en"
-      description: String!
-      tags: [String]!
-    ) {
-      responseResult { succeeded message }
-      page { id path title }
-    }
-  }
+**Get Channels:**
+```
+GET /api/v4/teams/{team_id}/channels
+```
+
+**Get Posts:**
+```
+GET /api/v4/channels/{channel_id}/posts
+```
+
+**Create Post:**
+```
+POST /api/v4/posts
+{
+  "channel_id": "...",
+  "message": "...",
+  "root_id": "..."  // optional, for threads
 }
 ```
 
-**Update Page:**
-```graphql
-mutation {
-  pages {
-    update(
-      id: Int!
-      title: String
-      content: String
-      description: String
-      tags: [String]
-    ) {
-      responseResult { succeeded message }
-    }
-  }
+**Add Reaction:**
+```
+POST /api/v4/reactions
+{
+  "post_id": "...",
+  "emoji_name": "..."
 }
 ```
 
-**Delete Page:**
-```graphql
-mutation {
-  pages {
-    delete(id: Int!) {
-      responseResult { succeeded message }
-    }
-  }
-}
-```
+## Documentation
 
-## Relevant Documentation
-
-- [WikiJS GraphQL API Docs](https://docs.requarks.io/dev/api)
+- [Cloudflare Agents SDK - Remote MCP Server Guide](https://developers.cloudflare.com/agents/guides/remote-mcp-server/)
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
 - [Cloudflare MCP Server Docs](https://developers.cloudflare.com/agents/mcp/)
+- [Mattermost REST API Docs](https://api.mattermost.com/)
 - [Model Context Protocol Spec](https://modelcontextprotocol.io/)
-
-## Troubleshooting
-
-### Common Issues
-
-1. **400 Bad Request on Create:** Ensure your WikiJS API key has write permissions
-2. **Page Not Found:** Paths are case-sensitive; check the exact path in WikiJS
-3. **Rate Limiting:** Large wikis may hit GraphQL complexity limits; use pagination
-
-### Debug Logging
-
-Enable debug logging in development:
-```bash
-LOG_LEVEL=debug npm run dev
-```
 
 ## License
 
 MIT
-
-
-## Customizing your MCP Server
-
-To add your own [tools](https://developers.cloudflare.com/agents/model-context-protocol/tools/) to the MCP server, define each tool inside the `init()` method of `src/index.ts` using `this.server.tool(...)`.
 
 ## Connect to Cloudflare AI Playground
 
 You can connect to your MCP server from the Cloudflare AI Playground, which is a remote MCP client:
 
 1. Go to https://playground.ai.cloudflare.com/
-2. Enter your deployed MCP server URL (`remote-mcp-server-authless.<your-account>.workers.dev/mcp`)
+2. Enter your deployed MCP server URL (`mattermost-mcp.<your-account>.workers.dev/mcp`)
 3. You can now use your MCP tools directly from the playground!
 
 ## Connect Claude Desktop to your MCP server
@@ -296,15 +236,15 @@ Update with this configuration:
 
 ```json
 {
-	"mcpServers": {
-		"calculator": {
-			"command": "npx",
-			"args": [
-				"mcp-remote",
-				"http://wiki-mcp.your-account.workers.dev/mcp"
-			]
-		}
-	}
+  "mcpServers": {
+    "mattermost": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://mattermost-mcp.your-account.workers.dev/mcp"
+      ]
+    }
+  }
 }
 ```
 
