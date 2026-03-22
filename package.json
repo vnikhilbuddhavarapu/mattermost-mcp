@@ -3,6 +3,19 @@
 	"version": "1.0.0",
 	"description": "Mattermost MCP Server - Remote MCP server for Mattermost integration",
 	"private": true,
+	"cloudflare": {
+		"bindings": {
+			"MATTERMOST_URL": {
+				"description": "Your Mattermost instance URL (e.g., https://mattermost.example.com)"
+			},
+			"MATTERMOST_TOKEN": {
+				"description": "Personal Access Token from Mattermost (Profile → Security → Personal Access Tokens)"
+			},
+			"MATTERMOST_TEAM_ID": {
+				"description": "Team ID from your Mattermost workspace (get via API, not team name)"
+			}
+		}
+	},
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
