@@ -28,5 +28,20 @@
 	},
 	"observability": {
 		"enabled": true
+	},
+	"vars": {
+		"MATTERMOST_URL": {
+			"description": "Your Mattermost instance URL (e.g., https://mattermost.example.com)",
+			"required": true
+		},
+		"MATTERMOST_TOKEN": {
+			"description": "Personal Access Token from Mattermost (Profile → Security → Personal Access Tokens)",
+			"required": true,
+			"sensitive": true
+		},
+		"MATTERMOST_TEAM_ID": {
+			"description": "Team ID from your Mattermost workspace (get via API, not team name)",
+			"required": true
+		}
 	}
 }
