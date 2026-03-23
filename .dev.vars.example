@@ -1,0 +1,3 @@
+MATTERMOST_URL=your-mattermost-url
+MATTERMOST_TOKEN=your-mattermost-personal-access-token
+MATTERMOST_TEAM_ID=your-mattermost-team-id
