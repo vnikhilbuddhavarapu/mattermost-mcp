@@ -1,3 +1,8 @@
+# Your Mattermost instance URL (e.g., https://mattermost.example.com)
 MATTERMOST_URL=your-mattermost-url
+
+# Personal Access Token from Mattermost (Profile → Security → Personal Access Tokens)
 MATTERMOST_TOKEN=your-mattermost-personal-access-token
+
+# Team ID from your Mattermost workspace (get via API, not team name)
 MATTERMOST_TEAM_ID=your-mattermost-team-id
